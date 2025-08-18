@@ -173,7 +173,7 @@ def identify_pos_model(prompt: str, tool_context: "ToolContext"):
     # create an image from
     logging.info("Loaded image")
     response = client.models.generate_content(
-        model="gemini-2.0-flash-001",
+        model="gemini-2.5-flash",
         contents=[
             """You are an expert in identifying the make and model of a Point of Sale systems in a image. Identify the Point of Sale (POS) make and model in the image.
             If the image is not POS model then do not attempt to idenify it. 
@@ -182,11 +182,17 @@ def identify_pos_model(prompt: str, tool_context: "ToolContext"):
         ],
     )
     # save the image to artifacts so it can be looked up later
-    if image_part and image_part.inline_data and image_part.inline_data.data and image_part.inline_data.mime_type:
+    if (
+        image_part
+        and image_part.inline_data
+        and image_part.inline_data.data
+        and image_part.inline_data.mime_type
+    ):
         tool_context.save_artifact(
             "user:user_pos_image.png",
             types.Part.from_bytes(
-                data=image_part.inline_data.data, mime_type=image_part.inline_data.mime_type
+                data=image_part.inline_data.data,
+                mime_type=image_part.inline_data.mime_type,
             ),
         )
     return response.text
@@ -327,7 +333,7 @@ def after_agent_callback(callback_context: ToolContext):
 
 """ 
 image_editor_agent = Agent(
-    model="gemini-2.0-flash-001",
+    model="gemini-2.5-flash",
     name="image_editor_agent",
     description="An agent that edits images.",
     instruction="You are an agent whose job is to replace the POS system in the image with the recommended one.",
@@ -335,7 +341,7 @@ image_editor_agent = Agent(
 ) """
 
 """ identify_pos_model = Agent(
-    model="gemini-2.0-flash-001",
+    model="gemini-2.5-flash",
     name="identify_pos_model",
     description="An agent that identifies the POS model in the images.",
     instruction="Given an image call the `identify_pos_model_flash` tool to identify the Point of Sale Terminal make and model.",
@@ -345,7 +351,7 @@ image_editor_agent = Agent(
 
 search_agent = Agent(
     # model="gemini-2.0-flash",
-    model="gemini-2.5-flash-preview-04-17",
+    model="gemini-2.5-flash",
     name="search_agent",
     description=f"""Searches for general information about {os.getenv("AGENT_COMPANY_NAME", "ACME Corp")}""",
     instruction=prompt.SEARCH_AGENT_INSTR,
@@ -354,7 +360,7 @@ search_agent = Agent(
 
 
 product_recommender_agent = Agent(
-    model="gemini-2.5-flash-preview-04-17",
+    model="gemini-2.5-flash",
     name="product_recommender_agent",
     description="A agent who recommends a POS solution based on the needs of the business owner",
     instruction=prompt.PRODUCT_RECOMENDER_AGENT_INSTR,

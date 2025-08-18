@@ -20,7 +20,7 @@ from product_onboarding.sub_agents.qualify_customer import prompt
 from product_onboarding.tools.places import find_business_from_google_maps
 
 qualify_customer_agent = Agent(
-    model="gemini-2.5-pro-preview-05-06",
+    model="gemini-2.5-pro",
     name="qualify_customer_agent",
     description="A validate business agent who helps users verify their business listing using business name and location",
     instruction=prompt.VERIFY_BUSINESS_AGENT_INSTR,

@@ -82,7 +82,9 @@ def check_fraud_drivers_license(query: str, tool_context: "ToolContext"):
     file_bytes, mime_type = _load_file_from_context(tool_context)
 
     if not file_bytes or not mime_type:
-        logging.warning("No file data found in user content to process for fraud check.")
+        logging.warning(
+            "No file data found in user content to process for fraud check."
+        )
         # Potentially return an LlmResponse indicating failure or missing data
         return None
 
@@ -159,7 +161,9 @@ def extract_info_from_drivers_license(query: str, tool_context: "ToolContext"):
     file_bytes, mime_type = _load_file_from_context(tool_context)
 
     if not file_bytes or not mime_type:
-        logging.warning("No file data found in user content for driver's license extraction.")
+        logging.warning(
+            "No file data found in user content for driver's license extraction."
+        )
         return json.dumps(
             {"error": "No file provided for driver's license processing."}
         )
@@ -217,12 +221,16 @@ def extract_info_from_bank_statement(query: str, tool_context: "ToolContext"):
     file_bytes, mime_type = _load_file_from_context(tool_context)
 
     if not file_bytes or not mime_type:
-        logging.warning("No file data found in user content for bank statement extraction.")
+        logging.warning(
+            "No file data found in user content for bank statement extraction."
+        )
         return json.dumps({"error": "No file provided for bank statement processing."})
 
     processor_name_env = os.getenv("BANK_STATEMENT_PROCESSOR_FULLPATH")
     if not processor_name_env:
-        logging.error("Error: Missing BANK_STATEMENT_PROCESSOR_FULLPATH environment variable.")
+        logging.error(
+            "Error: Missing BANK_STATEMENT_PROCESSOR_FULLPATH environment variable."
+        )
         return json.dumps(
             {"error": "Document AI processor for bank statement is not configured."}
         )
@@ -258,7 +266,7 @@ def extract_info_from_bank_statement(query: str, tool_context: "ToolContext"):
 
 
 kyc_check = Agent(
-    model="gemini-2.0-flash-001",
+    model="gemini-2.5-flash",
     name="kyc_check",
     description="""An agent that extracts the details of Drivers Licence and Bank Statement and verifies if the details match""",
     instruction=prompt.KYC_CHECK_AGENT_INSTR,

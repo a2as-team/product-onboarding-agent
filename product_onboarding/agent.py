@@ -24,7 +24,7 @@ from product_onboarding.sub_agents.product_recommender.agent import (
 from product_onboarding.sub_agents.qualify_customer.agent import qualify_customer_agent
 
 root_agent = Agent(
-    model="gemini-2.0-flash-001",
+    model="gemini-2.5-flash",
     name="root_agent",
     description="A Payment Oboarding Agent using the services of multiple sub-agents",
     instruction=prompt.ROOT_AGENT_INSTR,
