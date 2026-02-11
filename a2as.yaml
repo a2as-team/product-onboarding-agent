@@ -1,0 +1,410 @@
+manifest:
+  version: "0.1.3"
+  schema: https://a2as.org/cert/schema
+  subject:
+    name: abhinavrau/product-onboarding-agent
+    source: https://github.com/abhinavrau/product-onboarding-agent
+    branch: main
+    commit: "7188fe85"
+    scope: [product_onboarding/tools/__init__.py, product_onboarding/sub_agents/product_recommender/agent.py, product_onboarding/sub_agents/qualify_customer/__init__.py,
+      product_onboarding/sub_agents/kyc_check/agent.py, product_onboarding/sub_agents/qualify_customer/agent.py, product_onboarding/tools/search.py,
+      product_onboarding/sub_agents/kyc_check/__init__.py, product_onboarding/agent.py, product_onboarding/tools/places.py,
+      product_onboarding/tools/salesforce.py, product_onboarding/sub_agents/product_recommender/__init__.py, product_onboarding/__init__.py]
+  issued:
+    by: A2AS.org
+    at: '2026-02-11T16:54:35Z'
+    url: https://a2as.org/certified/agents/abhinavrau/product-onboarding-agent
+  signatures:
+    digest: sha256:8UsAc3t8-G5eWNae-6hb5C7vhqtILG4yGM-jRGyUrG4
+    key: ed25519:7OdRdzt2X978W-uXXTmNBjJfPNYBmxk-QbD1WKDpKFk
+    sig: ed25519:5J1E8skhr2nsvdxDEIKnMAQxO7E2jrL6cwg3xmX_UsH7_7zRKn52EJErvRQ3GsNPUChpHXar4HTunDxwJ2nECA
+
+agents:
+  _search_agent:
+    type: instance
+    models: [gemini-2.0-flash]
+    tools: [google_search]
+    params:
+      name: google_search_grounding
+      description: An agent providing Google-search grounding capability
+      instruction: [',', Answer the user's question directly using google_search grounding tool; Provide a brief but concise
+          response., 'Rather than a detail response, provide the immediate actionable item in a single sentence.', 'Do not
+          ask the user to check or look up information for themselves, that''s your role; do your best to be informative.']
+  kyc_check:
+    type: instance
+    models: [gemini-2.5-flash]
+    tools: [load_artifacts, update_opportunity_with_comment, check_fraud_drivers_license, extract_info_from_drivers_license,
+      extract_info_from_bank_statement]
+    params:
+      name: kyc_check
+      description: An agent that extracts the details of Drivers Licence and Bank Statement and verifies if the details match
+      instruction: [Greet the user with a message saying let's verify your identity so we can get a price and contract started.,
+        You are a document validation expert. Follow the below steps in order, '- Ask the user to first submit a photo of
+          their Drivers License', <Drivers_Licence_Verification_Steps>, '- Call `check_fraud_drivers_license` to verify the
+          license. If the license is detected to be fradulent, tell the user that and stop.', '- If the license is detected
+          not be an valid ID document, ask the user to upload a valid Drivers License document.', '- If the uploaded document
+          is a valid identity document call `extract_info_from_drivers_license` to get the details from the drivers license.',
+        </Drivers_Licence_Verification_Steps>, '- Ask the user to first upload a Bank Statement', <Bank_Statement_Verification_Steps>,
+        '- Call `extract_info_from_bank_statement` to get the details from the bank statement.', </Bank_Statement_Verification_Steps>,
+        '- Match first name and last name and address from the drivers license and bank statement  to see if they match.',
+        '- Output the following:', '* Type of first document: <document_type>', '* Type of second document: <document_type>',
+        '* Names are matching in both documents: Yes or No.', '- If document details do not match ask the user to upload again
+          and redo the  <Drivers_Licence_Verification_Steps> and <Bank_Statement_Verification_Steps>.', '- When the document
+          details match, Congratulate the user on successfully verifying their identity.', '- Call `update_opportunity_with_comment`
+          with comment as "KYC Complete".', '- Do not mention agent names or being transferred. Just do the tasks.']
+  product_recommender_agent:
+    type: instance
+    models: [gemini-2.5-flash]
+    tools: [knowledgebase_search_agent, search_agent, identify_pos_model, image_editor, get_opportunity_details, update_opportunity_with_comment,
+      update_opportunity_stage]
+    params:
+      name: product_recommender_agent
+      description: A agent who recommends a POS solution based on the needs of the business owner
+      instruction: [You are an expert sales agent responsible for recommedning a POS terminal based on the needs of the business.
+          Follow the below steps in order., <Recommender_Steps>, 1. Ask the user to upload a picture of their current POS
+          solution. Use `identify_pos_model` tool to identify the make and model of the POS terminal solution., 2. Use the
+          business details and their current POS solution in the context to start the recommendation process., '|----------------------------------|------------------------------------------------------|------------------------------------------------------|----------------------------------------------------|------------------------------------------------------|---------------------------------------------------|-------------------------------------------------|',
+        '| **Target Business Type/Size** | High-volume retail, full-service restaurants         | Retail, quick-service restaurants                    |
+          Retail, quick-service restaurants, services        | Mobile businesses, restaurants (tableside), services (on-location)
+          | Mobile businesses, low transaction volume, services (on-the-go) | Businesses accepting payments remotely, services
+          (invoicing) |', '| **Mode of Operation** | Stationary, Counter Service                          | Stationary, Counter
+          Service                          | Stationary, Compact Countertop                     | Mobile, Handheld                                     |
+          Mobile, Connects to Smartphone/Tablet             | Software-only, Web-based                        |', '| **Key
+          Hardware Features** | Dual screens, high-speed printer, cash drawer        | Large merchant screen, receipt printer,
+          cash drawer option | Compact design, touchscreen, built-in printer      | Portable, touchscreen, built-in printer,
+          barcode scanner, long battery | Mobile card reader                                | None (software only)                            |',
+        '| **Payment Acceptance** | Robust processing, various payment types             | Strong processing, various payment
+          types             | Accepts various payment types                      | Accepts various payment types                        |
+          Accepts swipe, dip, tap payments                  | Accept payments by phone or online              |', '| **Inventory
+          Management** | Yes                                                  | Yes                                                  |
+          Yes                                                | Yes                                                  | No (Basic
+          tracking via app might be possible)     | No                                              |', '| **Order Management**
+          | Yes (includes table management for restaurants)      | Yes                                                  |
+          Yes                                                | Yes (tableside ordering capable)                     | Basic
+          via app                                     | N/A                                             |', '| **Customer
+          Engagement/Loyalty** | Yes (Loyalty programs, feedback)                     | Yes (Loyalty programs, feedback)                     |
+          Yes (Loyalty programs, feedback)                   | Yes (Loyalty programs, feedback)                     | Basic
+          via app (Customer engagement)               | Basic via app (Customer engagement)             |', '| **Employee
+          Management** | Yes                                                  | Yes                                                  |
+          Yes                                                | Yes                                                  | Basic
+          via app                                     | Basic via app                                   |', '| **Reporting**
+          | Robust reporting                                     | Robust reporting                                     |
+          Robust reporting                                   | Robust reporting                                     | Yes
+          (via app/dashboard)                           | Yes (via web dashboard)                         |', '| **Online
+          Ordering Integration** | Yes                                                  | Yes                                                  |
+          Yes                                                | Yes                                                  | No                                                |
+          N/A                                             |', '| **Appointment Management (Services)** | N/A (More geared
+          towards retail/restaurants)       | N/A (More geared towards retail/restaurants)       | Yes (for services)                                 |
+          Yes (for services)                                   | No                                                | N/A (Invoicing
+          focus)                           |', '| **Invoicing** | No (Primary function is transaction processing)      | No
+          (Primary function is transaction processing)      | No (Primary function is transaction processing)    | No (Primary
+          function is transaction processing)      | No (Primary function is transaction processing)   | Yes                                             |',
+        '| **Recurring Payments** | No (Primary function is transaction processing)      | No (Primary function is transaction
+          processing)      | No (Primary function is transaction processing)    | No (Primary function is transaction processing)      |
+          No (Primary function is transaction processing)   | Yes                                             |', 5. After
+          every interaction  ask the user to confirm which model they would like to finalize for their business., '6. After
+          the user has confirmed the specific model, ask the user if they would like to see how the system they have selected
+          looks like in their store based on their orginal image. Do not stop. Go to the next step.', 7. If they say yes to
+          the question call `image_editor` with the prompt 'Change ONLY the Point of Sale system in the image with the <user
+          selected system> '. Do not stop. Go to the next step., 8. Ask them if they would like to finalize and order the
+          chosen POS system. Do not stop. Go to the next step., '9. After the user has confirmed they would like to order
+          the chosen POS system, Call `update_opportunity_stage` with new_stage as "Solution Eval Complete". Do not stop.
+          Go to the next step.', 10. Run the `kyc_check` agent., </Recommender_Steps>, '- Do not attempt to assume the role
+          `knowledgebase_search`, `search_agent` or `image_editor`, use them instead.', '- Please use only the agents and
+          tools to fulfill all user requests.', '- Do not mention agent names or being transferred or updating opportunities.
+          Just do the tasks.']
+  qualify_customer_agent:
+    type: instance
+    models: [gemini-2.5-pro]
+    tools: [find_business_from_google_maps]
+    params:
+      name: qualify_customer_agent
+      description: A validate business agent who helps users verify their business listing using business name and location
+      instruction: [You are business validation agent who guides owners of small businesses to validate their business., Your
+          role is only to lookup the businesses using Google Maps data and ask the user to verify their business., '- Here''s
+          the optimal flow:', '- Ask the user the name of their business and the city it is located in.', '- Use the `find_business_from_google_maps`
+          tool with the user input to search for a list of places that match', '- Show the user a place one at a time and
+          ask the user with Yes/No to pick one that is theirs', '- Show all the fields from the returned JSON including map_url,
+          place_id and image_url in bulletted list with field names for each place. Make sure to use descriptive names for
+          the fields and url should be hyperlined with short names.', '- Once the user says Yes to one of the choices, run
+          the `product_recommender_agent`.', '- If user answers No to all the choices, then run then ask the user again to
+          be more specific on the name and location and agent flow from the start', '- Do not mention agent names or being
+          transferred. Just do the tasks.']
+  root_agent:
+    type: instance
+    models: [gemini-2.5-flash]
+    params:
+      name: root_agent
+      description: A Payment Oboarding Agent using the services of multiple sub-agents
+      instruction: ['- You want to gather a minimal information to help the user', '- After every tool call, pretend you''re
+          showing the result to the user and keep your response limited to a phrase.', '- Please use only the agents and tools
+          to fulfill all user requests.', '- Do not mention agent names or being transferred. Just do the tasks.', 'Please
+          follow these steps to accomplish the task at hand:', 1. Follow <Gather Business Name> section and ensure that the
+          user provides the business name for all other queries., 2. Move to the <Steps> section and strictly follow all the
+          steps one by one, 3. Please adhere to <Key Constraints> when you attempt to answer the user's query., <Gather Business
+          Name>, 1. Greet the user and request a business name and location. This is a required input to move forward., '2.
+          If the user does not provide a business name and location, repeatedly ask for it until it is provided. Do not proceed
+          until you have a business name.', 3. Once business name has been provided go on to the next step., </Gather Business
+          Name>, <Steps>, 1. Use the `qualify_customer_agent`. Do not stop after this. Go to next step, 2. Use the `product_recommender_agent`
+          to recommend a POS solution based on the needs of the business. Do not stop after this. Go to next step, 3. Use
+          `kyc_check` agent to verify the documents. Do not stop after this. Go to next step, '4. Thank the user for using
+          the {...} Point of Sale agent.', </Steps>, <Key Constraints>, '- Your role is follow the Steps in <Steps> in the
+          specified order.', '- Complete all the steps', '- Be brief when responding to the user.', </Key Constraints>]
+      sub_agents: [qualify_customer_agent, product_recommender_agent, kyc_check]
+  search_agent:
+    type: instance
+    models: [gemini-2.5-flash]
+    tools: [google_search_grounding]
+    params:
+      name: search_agent
+      description: Searches for general information about {os.getenv}
+      instruction: ['You are responsible for answering general questions about the company {...}.', '- Always use the `google_search_grounding`
+          tool to answer the questions.', '- If the response from `google_search_grounding` tools is not relvant, then do
+          not show the answer to the user. Ask the user for clarification.']
+
+models:
+  gemini-2.0-flash:
+    type: literal
+    agents: [_search_agent]
+  gemini-2.5-flash:
+    type: literal
+    agents: [search_agent, product_recommender_agent, kyc_check, root_agent]
+  gemini-2.5-pro:
+    type: literal
+    agents: [qualify_customer_agent]
+
+tools:
+  check_fraud_drivers_license:
+    type: function
+    agents: [kyc_check]
+    params:
+      description: Calls DocAI to verify document is not fradulent
+  extract_info_from_bank_statement:
+    type: function
+    agents: [kyc_check]
+    params:
+      description: Extracts Name and Address from a bank statement using Document AI.
+  extract_info_from_drivers_license:
+    type: function
+    agents: [kyc_check]
+    params:
+      description: Extracts Name and Address from a driver's license using Document AI.
+  find_business_from_google_maps:
+    type: function
+    agents: [qualify_customer_agent]
+    params:
+      description: Fetches details for multiple businesses and formats them as specified.
+  get_opportunity_details:
+    type: function
+    agents: [product_recommender_agent]
+  google_search:
+    type: module
+    agents: [_search_agent]
+  google_search_grounding:
+    type: function
+    agents: [search_agent]
+  google_search_grounding.1:
+    type: agent
+    agents: [_search_agent]
+    params:
+      wrapper: AgentTool
+      agent: _search_agent
+  identify_pos_model:
+    type: function
+    agents: [product_recommender_agent]
+  image_editor:
+    type: function
+    agents: [product_recommender_agent]
+    params:
+      description: Generates an image based on the prompt using Gemini Flash 2.0 Image generation model.
+  knowledgebase_search_agent:
+    type: function
+    agents: [product_recommender_agent]
+  load_artifacts:
+    type: module
+    agents: [kyc_check]
+  search_agent:
+    type: agent
+    agents: [product_recommender_agent]
+    params:
+      wrapper: AgentTool
+      agent: search_agent
+  update_opportunity_stage:
+    type: function
+    agents: [product_recommender_agent]
+  update_opportunity_with_comment:
+    type: function
+    agents: [product_recommender_agent, kyc_check]
+
+teams:
+  root_agent:
+    type: hierarchy
+    agents: [root_agent, qualify_customer_agent, product_recommender_agent, kyc_check]
+
+imports:
+  Agent: google.adk.agents.Agent
+  agent: agent
+  AgentTool: google.adk.tools.agent_tool.AgentTool
+  Any: typing.Any
+  base64: base64
+  BytesIO: io.BytesIO
+  Client: google.genai.Client
+  Dict: typing.Dict
+  docai: product_onboarding.tools.docai
+  find_business_from_google_maps: product_onboarding.tools.places.find_business_from_google_maps
+  get_opportunity_details: product_onboarding.tools.salesforce.get_opportunity_details
+  google_search: google.adk.tools.google_search_tool.google_search
+  google_search_grounding: product_onboarding.tools.search.google_search_grounding
+  Image: PIL.Image
+  json: json
+  kyc_check: product_onboarding.sub_agents.kyc_check.agent.kyc_check
+  List: typing.List
+  LlmRequest: google.adk.models.LlmRequest
+  LlmResponse: google.adk.models.LlmResponse
+  load_artifacts: google.adk.tools.load_artifacts
+  logging: logging
+  Optional: typing.Optional
+  os: os
+  product_recommender_agent: product_onboarding.sub_agents.product_recommender.agent.product_recommender_agent
+  prompt: product_onboarding.prompt
+  qualify_customer_agent: product_onboarding.sub_agents.qualify_customer.agent.qualify_customer_agent
+  requests: requests
+  ToolContext: google.adk.tools.ToolContext
+  types: google.genai.types
+  Union: typing.Union
+  update_opportunity_stage: product_onboarding.tools.salesforce.update_opportunity_stage
+  update_opportunity_with_comment: product_onboarding.tools.salesforce.update_opportunity_with_comment
+  vaisearch: product_onboarding.sub_agents.product_recommender.vaisearch
+
+functions:
+  _load_file_from_context:
+    type: sync
+    module: product_onboarding.sub_agents.kyc_check.agent
+    args: [tool_context]
+    params:
+      returns: tuple
+  _load_image_from_user_content:
+    type: sync
+    module: product_onboarding.sub_agents.product_recommender.agent
+    args: [tool_context]
+    params:
+      returns: tuple
+  after_agent_callback:
+    type: sync
+    module: product_onboarding.sub_agents.product_recommender.agent
+    args: [callback_context]
+  check_fraud_drivers_license:
+    type: sync
+    module: product_onboarding.sub_agents.kyc_check.agent
+    args: [query, tool_context]
+  extract_info_from_bank_statement:
+    type: sync
+    module: product_onboarding.sub_agents.kyc_check.agent
+    args: [query, tool_context]
+  extract_info_from_drivers_license:
+    type: sync
+    module: product_onboarding.sub_agents.kyc_check.agent
+    args: [query, tool_context]
+  find_business_from_google_maps:
+    type: sync
+    module: product_onboarding.tools.places
+    args: [query, max_results]
+    params:
+      returns: Union
+  get_opportunity_details:
+    type: sync
+    module: product_onboarding.tools.salesforce
+    args: [business_name, tool_context]
+    params:
+      returns: dict
+  get_photo_url:
+    type: sync
+    module: product_onboarding.tools.places
+    args: [photos_data, api_key, max_width]
+    params:
+      returns: str
+  get_place_details:
+    type: sync
+    module: product_onboarding.tools.places
+    args: [place_id, api_key]
+    params:
+      returns: Union
+  identify_pos_model:
+    type: sync
+    module: product_onboarding.sub_agents.product_recommender.agent
+    args: [prompt, tool_context]
+  image_editor:
+    type: sync
+    module: product_onboarding.sub_agents.product_recommender.agent
+    args: [prompt, tool_context]
+  knowledgebase_search_agent:
+    type: sync
+    module: product_onboarding.sub_agents.product_recommender.agent
+    args: [query, tool_context]
+  update_opportunity_stage:
+    type: sync
+    module: product_onboarding.tools.salesforce
+    args: [business_name, new_stage, tool_context]
+    params:
+      returns: dict
+  update_opportunity_with_comment:
+    type: sync
+    module: product_onboarding.tools.salesforce
+    args: [business_name, comment_text, tool_context]
+    params:
+      returns: dict
+
+variables:
+  BANK_STATEMENT_PROCESSOR_FULLPATH:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [product_onboarding.sub_agents.kyc_check.agent]
+  DL_PROCESSOR_FULLPATH:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [product_onboarding.sub_agents.kyc_check.agent]
+  GOOGLE_CLOUD_PROJECT:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [product_onboarding.sub_agents.product_recommender.agent]
+  GOOGLE_PLACES_API_KEY:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [product_onboarding.tools.places]
+  ID_PROOFING_PROCESSOR_FULLPATH:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [product_onboarding.sub_agents.kyc_check.agent]
+  VERTEX_AI_SEARCH_ENGINE_ID:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [product_onboarding.sub_agents.product_recommender.agent]
+  VERTEX_AI_SEARCH_LOCATION:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [product_onboarding.sub_agents.product_recommender.agent]
+
+files:
+  handheld_terminal_image.png:
+    type: pattern
+    actions: [read]
+    params:
+      caller: [os.path.join]
+      pattern: ['file://', script_dir, handheld_terminal_image.png]
+
+networks:
+  maps.googleapis.com:
+    type: api
+    actions: [GET]
+    urls: [/maps/api/place/details/json, /maps/api/place/textsearch/json]
+    protocols: [https]
+    ports: ["443"]
+    params:
+      caller: [get_place_details, find_business_from_google_maps]
